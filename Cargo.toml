@@ -1,0 +1,17 @@
+[package]
+name = "UefiVarMonitor"
+version = "0.1.0"
+
+[features]
+default = ["log-serial", "log-panic"]
+# Have the log! macro write to serial output. Disabling this significantly
+# reduces code size, but makes debugging essentially impossible
+log-serial = []
+# Log panics to serial output. Disabling this (without disabling log-serial)
+# gets you most of the code size reduction, without losing _all_ debugging.
+log-panic = ["log-serial"]
+
+[dependencies]
+r-efi = "3.1.0"
+x86_64 = "0.12.2"
+atomic_refcell = "0.1.6"
