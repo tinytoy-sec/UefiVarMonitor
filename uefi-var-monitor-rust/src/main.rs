@@ -1,3 +1,5 @@
+// uefi-var-monitor/src/main.rs
+
 #![no_main]
 #![no_std]
 
@@ -26,15 +28,11 @@ extern "win64" fn handle_get_variable(
     data_size: *mut usize,
     data: *mut core::ffi::c_void,
 ) -> efi::Status {
-    //
-    // Invoke the original GetVariable service, and log this service invocation.
-    //
+    // Invoke the original GetVariable service and log the invocation.
     let efi_status =
         unsafe { GET_VARIABLE(variable_name, vendor_guid, attributes, data_size, data) };
 
-    //
-    // Convert to UTF-8 form USC-2 up to 64 characters.
-    //
+    // Convert to UTF-8 from USC-2 up to 64 characters.
     let mut name;
     let name = unsafe {
         let variable_name = core::slice::from_raw_parts(variable_name, 64);
@@ -47,7 +45,7 @@ extern "win64" fn handle_get_variable(
             .map(|&c| c as u8)
         {
             name_ptr.add(offset).write(c);
-            offset = offset + 1;
+            offset += 1;
         }
         core::str::from_utf8_unchecked(core::slice::from_raw_parts(name_ptr, offset))
     };
@@ -118,9 +116,7 @@ fn exchange_pointer_in_service_table(
     let system_table = unsafe { &mut *system_table };
     let boot_services = unsafe { &mut *system_table.boot_services };
 
-    //
     // Disable interrupt.
-    //
     let tpl = (boot_services.raise_tpl)(efi::TPL_HIGH_LEVEL);
 
     unsafe {
@@ -128,9 +124,7 @@ fn exchange_pointer_in_service_table(
         *address_to_update = new_function_pointer;
     };
 
-    //
     // Update the CRC32 in the EFI System Table header.
-    //
     system_table.hdr.crc32 = 0;
     let efi_status = (boot_services.calculate_crc32)(
         &mut system_table.hdr as *mut _ as *mut core::ffi::c_void,
@@ -156,9 +150,7 @@ fn efi_main(_image_handle: efi::Handle, system_table: *mut efi::SystemTable) -> 
 
     log!("Driver being loaded");
 
-    //
     // Register a notification for SetVirtualAddressMap call.
-    //
     let mut event: r_efi::base::Event = core::ptr::null_mut();
     let mut efi_status = (boot_services.create_event_ex)(
         r_efi::efi::EVT_NOTIFY_SIGNAL,
@@ -173,9 +165,7 @@ fn efi_main(_image_handle: efi::Handle, system_table: *mut efi::SystemTable) -> 
         return efi_status;
     }
 
-    //
     // Install hooks.
-    //
     efi_status = unsafe {
         exchange_pointer_in_service_table(
             system_table,
