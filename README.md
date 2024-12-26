@@ -64,8 +64,3 @@ Building
 * UefiVarMonitorExClient
 
     This is a standard Windows driver. VS2019 and WDK 10.0.18362 or later are required.
-
-Credits
----------
-
-- Thank you [@x1tan](https://twitter.com/x1tan) for modernalized xcargo-less build. 
