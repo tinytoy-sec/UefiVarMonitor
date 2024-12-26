@@ -5,9 +5,6 @@ The sample runtime DXE driver (UEFI driver) monitoring access to the UEFI variab
 
 This project was developed to provide a small sample of a runtime driver.
 
-![UefiVarMonitor](Resources/UefiVarMonitor.png)
-![uefi-var-monitor](Resources/uefi-var-monitor-on-linux.png)
-
 Rust implementation was made solely for author's learning.
 
 Projects Overview
