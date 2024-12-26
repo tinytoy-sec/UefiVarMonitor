@@ -1,6 +1,7 @@
 #include <UefiVarMonitorExDxe.h>
 #include <ntstrsafe.h>
 #include <intrin.h>
+#include <ntddk.h>
 
 /**
  * @brief Handles GetVariable and SetVariable runtime service calls.
@@ -18,6 +19,7 @@ HandleGetOrSetVariable (
     SIZE_T dataSize;
     CONST WCHAR* variableName;
     CONST CHAR* message;
+    LARGE_INTEGER timeStamp;
 
     //
     // This callback is always called at DISPATCH_LEVEL (to prevent recursive call).
@@ -75,6 +77,17 @@ HandleGetOrSetVariable (
                dataSize,
                variableName,
                message);
+
+    // Get the current system time
+    KeQuerySystemTime(&timeStamp);
+    DbgPrintEx(DPFLTR_IHVDRIVER_ID,
+               DPFLTR_ERROR_LEVEL,
+               "Timestamp: %lld\n", timeStamp.QuadPart);
+
+    // Log the variable access with timestamp
+    DbgPrintEx(DPFLTR_IHVDRIVER_ID,
+               DPFLTR_ERROR_LEVEL,
+               "Access Time: %lld\n", timeStamp.QuadPart);
 
 Exit:
     //
