@@ -1,44 +1,44 @@
 UefiVarMonitor
 ===============
 
-The sample runtime DXE driver (UEFI driver) monitoring access to the UEFI variables by hooking the runtime service table in C and Rust.
+这是一个示例运行时DXE驱动程序（UEFI驱动程序），通过在C和Rust中挂钩运行时服务表来监控对UEFI变量的访问。
 
-This project was developed to provide a small sample of a runtime driver.
+该项目旨在提供一个小型运行时驱动程序的示例。
 
-Rust implementation was made solely for author's learning.
+Rust实现完全是为了作者的学习。
 
-Projects Overview
+项目概述
 ------------------
 
 * UefiVarMonitorDxe
 
-    The UEFI runtime driver that hooks `GetVariable` and `SetVariable` runtime services, and logs the use of them into serial output. Written in less than 300 lines of C code.
+    这是一个UEFI运行时驱动程序，挂钩`GetVariable`和`SetVariable`运行时服务，并将其使用情况记录到串行输出中。用不到300行C代码编写。
 
 * uefi-var-monitor
 
-    Nearly equivalent implementation of `UefiVarMonitorDxe` in Rust. Unsafe, unsafe everywhere.
+    与`UefiVarMonitorDxe`几乎等效的Rust实现。到处都是不安全的代码。
 
 * UefiVarMonitorExDxe
 
-    The enhanced version of `UefiVarMonitorDxe` allowing a Windows driver to register an inline callback of the above runtime services. This can also be used to alter parameters and block those calls.
+    `UefiVarMonitorDxe`的增强版本，允许Windows驱动程序注册上述运行时服务的内联回调。这也可以用来更改参数并阻止这些调用。
 
 * UefiVarMonitorExClient
 
-    The sample Windows driver registering a callback with `UefiVarMonitorExDxe`.
+    注册回调与`UefiVarMonitorExDxe`的示例Windows驱动程序。
 
-Building
+构建
 ---------
 
-* UefiVarMonitorDxe and UefiVarMonitorExDxe
+* UefiVarMonitorDxe和UefiVarMonitorExDxe
 
-    1. Set up edk2 build environment
-    2. Copy `UefiVarMonitorPkg` as `edk2\UefiVarMonitorPkg`
-    3. On the edk2 build command prompt, run the below command:
+    1. 设置edk2构建环境
+    2. 将`UefiVarMonitorPkg`复制为`edk2\UefiVarMonitorPkg`
+    3. 在edk2构建命令提示符下，运行以下命令：
         ```
         > edksetup.bat
         > build -t VS2019 -a X64 -b NOOPT -p UefiVarMonitorPkg\UefiVarMonitorPkg.dsc -D DEBUG_ON_SERIAL_PORT
         ```
-       Or on Linux or WSL,
+       或在Linux或WSL上，
         ```
         $ . edksetup.sh
         $ build -t GCC5 -a X64 -b NOOPT -p UefiVarMonitorPkg/UefiVarMonitorPkg.dsc -D DEBUG_ON_SERIAL_PORT
@@ -46,13 +46,13 @@ Building
 
 * uefi-var-monitor
 
-    1. Install the nightly rust compiler. Below is an example on Linux, but it is largely the same on Windows.
+    1. 安装夜间版本的Rust编译器。以下是在Linux上的示例，但在Windows上大致相同。
         ```
         $ sudo snap install rustup --classic
         $ rustup default nightly
         $ rustup component add rust-src
         ```
-    2. Build the project.
+    2. 构建项目。
         ```
         $ cd uefi-var-monitor
         $ cargo build
@@ -60,4 +60,5 @@ Building
 
 * UefiVarMonitorExClient
 
-    This is a standard Windows driver. VS2019 and WDK 10.0.18362 or later are required.
+    这是一个标准的Windows驱动程序。需要VS2019和10.0.18362或更高版本的WDK。
+ 
