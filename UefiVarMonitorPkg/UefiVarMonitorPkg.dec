@@ -1,0 +1,5 @@
+[Defines]
+  DEC_SPECIFICATION              = 1.27
+  PACKAGE_NAME                   = UefiVarMonitorPkg
+  PACKAGE_GUID                   = 44df64b6-d629-48c9-9827-2072f1c0d376
+  PACKAGE_VERSION                = 1.00

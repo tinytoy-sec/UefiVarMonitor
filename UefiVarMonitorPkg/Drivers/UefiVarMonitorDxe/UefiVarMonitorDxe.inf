@@ -1,0 +1,39 @@
+[Defines]
+  INF_VERSION                    = 1.27
+  BASE_NAME                      = UefiVarMonitorDxe
+  FILE_GUID                      = d7e9ffa5-f4ce-41ab-a320-4cd7881ef4a3
+  MODULE_TYPE                    = DXE_RUNTIME_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = UefiVarMonitorDxeInitialize
+  UNLOAD_IMAGE                   = UefiVarMonitorDxeUnload
+
+[Sources]
+  UefiVarMonitorDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+
+[LibraryClasses]
+  UefiDriverEntryPoint
+  UefiLib
+  UefiRuntimeLib
+
+[Guids]
+  gEfiEventVirtualAddressChangeGuid
+
+[Depex]
+  TRUE
+
+[BuildOptions.common.DXE_RUNTIME_DRIVER]
+  # Detect use of deprecated interfaces if any.
+  MSFT:*_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES
+
+  # Remove DebugLib library instances (ASSERT and such) from the RELEASE binary.
+  # https://github.com/tianocore-docs/edk2-UefiDriverWritersGuide/blob/master/31_testing_and_debugging_uefi_drivers/314_debugging_code_statements/3141_configuring_debuglib_with_edk_ii.md
+  MSFT:RELEASE_*_*_CC_FLAGS = -D MDEPKG_NDEBUG
+
+  # By default, certain meta-data in the PE header is zeroed out to increase
+  # compression ratio. Some of those information can be helpful for a debugger,
+  # for example, to reconstruct stack trace. Leave it for such cases. See also,
+  # https://edk2-docs.gitbooks.io/edk-ii-basetools-user-guides/content/GenFw.html
+  MSFT:*_*_X64_GENFW_FLAGS = --keepexceptiontable --keepzeropending --keepoptionalheader

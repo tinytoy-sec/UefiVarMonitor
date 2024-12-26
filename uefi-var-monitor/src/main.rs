@@ -26,104 +26,57 @@ extern "win64" fn handle_get_variable(
     data_size: *mut usize,
     data: *mut core::ffi::c_void,
 ) -> efi::Status {
-    let efi_status = unsafe { GET_VARIABLE(variable_name, vendor_guid, attributes, data_size, data) };
-    
-    // 使用新的辅助函数来处理变量名转换
-    let name = unsafe { convert_variable_name(variable_name) };
-    let effective_size = get_effective_size(data_size);
-    let guid_fields = unsafe { (*vendor_guid).as_fields() };
-    
-    log_variable_access(guid_fields, effective_size, name, efi_status);
-    efi_status
-}
+    //
+    // Invoke the original GetVariable service, and log this service invocation.
+    //
+    let efi_status =
+        unsafe { GET_VARIABLE(variable_name, vendor_guid, attributes, data_size, data) };
 
-// 新增辅助函数
-unsafe fn convert_variable_name(variable_name: *mut r_efi::base::Char16) -> &'static str {
-    let variable_slice = core::slice::from_raw_parts(variable_name, 64);
-    let mut name_buffer = core::mem::MaybeUninit::<[u8; 64]>::uninit();
-    let name_ptr = name_buffer.as_mut_ptr() as *mut u8;
-    
-    let length = variable_slice
-        .iter()
-        .take_while(|&&c| c != 0)
-        .enumerate()
-        .map(|(i, &c)| {
-            name_ptr.add(i).write(c as u8);
-            i + 1
-        })
-        .last()
-        .unwrap_or(0);
+    //
+    // Convert to UTF-8 form USC-2 up to 64 characters.
+    //
+    let mut name;
+    let name = unsafe {
+        let variable_name = core::slice::from_raw_parts(variable_name, 64);
+        name = core::mem::MaybeUninit::<[u8; 64]>::uninit();
+        let name_ptr = name.as_mut_ptr() as *mut u8;
+        let mut offset = 0;
+        for c in variable_name
+            .iter()
+            .take_while(|&&c| c != 0)
+            .map(|&c| c as u8)
+        {
+            name_ptr.add(offset).write(c);
+            offset = offset + 1;
+        }
+        core::str::from_utf8_unchecked(core::slice::from_raw_parts(name_ptr, offset))
+    };
 
-    core::str::from_utf8_unchecked(core::slice::from_raw_parts(name_ptr, length))
-}
-
-fn get_effective_size(data_size: *mut usize) -> usize {
-    if data_size.is_null() {
+    let effective_size = if data_size.is_null() {
         0
     } else {
         unsafe { *data_size }
-    }
-}
-
-// 新增结构体用于记录变量访问信息
-struct VariableAccessInfo {
-    name: &'static str,
-    access_count: usize,
-    last_accessed: u64, // 时间戳
-}
-
-// 新增全局变量以存储访问信息
-static mut VARIABLE_ACCESS_INFO: Option<VariableAccessInfo> = None;
-
-// 修改log_variable_access函数以记录时间戳和访问次数
-fn log_variable_access(
-    guid_fields: (u32, u16, u16, u8, u8, [u8; 6]),
-    size: usize,
-    name: &str,
-    status: efi::Status,
-) {
-    let current_time = get_current_timestamp(); // 获取当前时间戳
-    unsafe {
-        if let Some(ref mut info) = VARIABLE_ACCESS_INFO {
-            if info.name == name {
-                info.access_count += 1;
-                info.last_accessed = current_time;
-            }
-        } else {
-            VARIABLE_ACCESS_INFO = Some(VariableAccessInfo {
-                name,
-                access_count: 1,
-                last_accessed: current_time,
-            });
-        }
-    }
-
+    };
+    let data = unsafe { (*vendor_guid).as_fields() };
     log!(
-        "G: {:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X} Size={:08x} {}: {:#x} Access Count: {} Last Accessed: {}",
-        guid_fields.0,
-        guid_fields.1,
-        guid_fields.2,
-        guid_fields.3,
-        guid_fields.4,
-        guid_fields.5[0],
-        guid_fields.5[1],
-        guid_fields.5[2],
-        guid_fields.5[3],
-        guid_fields.5[4],
-        guid_fields.5[5],
-        size,
+        "G: {:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X} Size={:08x} {}: {:#x}",
+        data.0,
+        data.1,
+        data.2,
+        data.3,
+        data.4,
+        data.5[0],
+        data.5[1],
+        data.5[2],
+        data.5[3],
+        data.5[4],
+        data.5[5],
+        effective_size,
         name,
-        status.as_usize(),
-        unsafe { VARIABLE_ACCESS_INFO.as_ref().unwrap().access_count },
-        unsafe { VARIABLE_ACCESS_INFO.as_ref().unwrap().last_accessed },
+        efi_status.as_usize(),
     );
-}
 
-// 新增获取当前时间戳的函数
-fn get_current_timestamp() -> u64 {
-    // 这里可以实现获取系统时间戳的逻辑
-    // 例如，使用某种计时器或系统调用
-    0 // 返回一个示例时间戳
+    return efi_status;
 }
 
 /**
@@ -158,40 +111,36 @@ fn exchange_pointer_in_service_table(
     new_function_pointer: *mut core::ffi::c_void,
     original_function_pointer: *mut *mut core::ffi::c_void,
 ) -> efi::Status {
-    let system_table = unsafe { &mut *system_table };
-    let boot_services = unsafe { &mut *system_table.boot_services };
-
-    // 使用 RAII 模式处理 TPL
-    struct TplGuard<'a> {
-        boot_services: &'a mut efi::BootServices,
-        old_tpl: efi::Tpl,
-    }
-
-    impl<'a> Drop for TplGuard<'a> {
-        fn drop(&mut self) {
-            (self.boot_services.restore_tpl)(self.old_tpl);
-        }
-    }
-
-    let _tpl_guard = TplGuard {
-        boot_services,
-        old_tpl: (boot_services.raise_tpl)(efi::TPL_HIGH_LEVEL),
-    };
-
     unsafe {
         assert!(!system_table.is_null());
         assert!(*address_to_update != new_function_pointer);
+    };
+    let system_table = unsafe { &mut *system_table };
+    let boot_services = unsafe { &mut *system_table.boot_services };
+
+    //
+    // Disable interrupt.
+    //
+    let tpl = (boot_services.raise_tpl)(efi::TPL_HIGH_LEVEL);
+
+    unsafe {
         *original_function_pointer = *address_to_update;
         *address_to_update = new_function_pointer;
-    }
+    };
 
-    // 更新 CRC32
+    //
+    // Update the CRC32 in the EFI System Table header.
+    //
     system_table.hdr.crc32 = 0;
-    (boot_services.calculate_crc32)(
+    let efi_status = (boot_services.calculate_crc32)(
         &mut system_table.hdr as *mut _ as *mut core::ffi::c_void,
         system_table.hdr.header_size as usize,
         &mut system_table.hdr.crc32,
-    )
+    );
+    assert!(!efi_status.is_error());
+
+    (boot_services.restore_tpl)(tpl);
+    return efi_status;
 }
 
 /**
