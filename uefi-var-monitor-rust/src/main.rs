@@ -1,4 +1,4 @@
-// uefi-var-monitor/src/main.rs
+// uefi-var-monitor-rust/src/main.rs
 
 #![no_main]
 #![no_std]
@@ -73,6 +73,10 @@ extern "win64" fn handle_get_variable(
         name,
         efi_status.as_usize(),
     );
+
+    // New feature: Log the variable access time
+    let access_time = unsafe { core::time::SystemTime::now() };
+    log!("Variable accessed at: {:?}", access_time);
 
     return efi_status;
 }
