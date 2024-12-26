@@ -65,14 +65,41 @@ fn get_effective_size(data_size: *mut usize) -> usize {
     }
 }
 
+// 新增结构体用于记录变量访问信息
+struct VariableAccessInfo {
+    name: &'static str,
+    access_count: usize,
+    last_accessed: u64, // 时间戳
+}
+
+// 新增全局变量以存储访问信息
+static mut VARIABLE_ACCESS_INFO: Option<VariableAccessInfo> = None;
+
+// 修改log_variable_access函数以记录时间戳和访问次数
 fn log_variable_access(
     guid_fields: (u32, u16, u16, u8, u8, [u8; 6]),
     size: usize,
     name: &str,
     status: efi::Status,
 ) {
+    let current_time = get_current_timestamp(); // 获取当前时间戳
+    unsafe {
+        if let Some(ref mut info) = VARIABLE_ACCESS_INFO {
+            if info.name == name {
+                info.access_count += 1;
+                info.last_accessed = current_time;
+            }
+        } else {
+            VARIABLE_ACCESS_INFO = Some(VariableAccessInfo {
+                name,
+                access_count: 1,
+                last_accessed: current_time,
+            });
+        }
+    }
+
     log!(
-        "G: {:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X} Size={:08x} {}: {:#x}",
+        "G: {:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X} Size={:08x} {}: {:#x} Access Count: {} Last Accessed: {}",
         guid_fields.0,
         guid_fields.1,
         guid_fields.2,
@@ -87,7 +114,16 @@ fn log_variable_access(
         size,
         name,
         status.as_usize(),
+        unsafe { VARIABLE_ACCESS_INFO.as_ref().unwrap().access_count },
+        unsafe { VARIABLE_ACCESS_INFO.as_ref().unwrap().last_accessed },
     );
+}
+
+// 新增获取当前时间戳的函数
+fn get_current_timestamp() -> u64 {
+    // 这里可以实现获取系统时间戳的逻辑
+    // 例如，使用某种计时器或系统调用
+    0 // 返回一个示例时间戳
 }
 
 /**
