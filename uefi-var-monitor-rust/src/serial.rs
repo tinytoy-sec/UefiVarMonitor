@@ -1,3 +1,4 @@
+// uefi-var-monitor/src/serial.rs
 // Copyright © 2019 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +17,6 @@
 // from Philipp Oppermann
 
 use core::fmt;
-
 use atomic_refcell::AtomicRefCell;
 use x86_64::instructions::port::PortWriteOnly;
 
@@ -33,6 +33,16 @@ impl fmt::Write for Serial {
         }
         Ok(())
     }
+}
+
+// New function to log error messages with a specific prefix
+pub fn log_error(message: &str) {
+    let _ = writeln!(Serial, "[ERROR] {}", message);
+}
+
+// New function to log info messages with a specific prefix
+pub fn log_info(message: &str) {
+    let _ = writeln!(Serial, "[INFO] {}", message);
 }
 
 #[macro_export]
