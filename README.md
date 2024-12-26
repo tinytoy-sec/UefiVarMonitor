@@ -10,26 +10,26 @@ Rust实现完全是为了作者的学习。
 项目概述
 ------------------
 
-* UefiVarMonitorDxe
+* UefiVarMonitorCore
 
     这是一个UEFI运行时驱动程序，挂钩`GetVariable`和`SetVariable`运行时服务，并将其使用情况记录到串行输出中。用不到300行C代码编写。
 
-* uefi-var-monitor
+* uefi-var-monitor-rust
 
-    与`UefiVarMonitorDxe`几乎等效的Rust实现。到处都是不安全的代码。
+    与`UefiVarMonitorCore`几乎等效的Rust实现。到处都是不安全的代码。
 
-* UefiVarMonitorExDxe
+* UefiVarMonitorEnhanced
 
-    `UefiVarMonitorDxe`的增强版本，允许Windows驱动程序注册上述运行时服务的内联回调。这也可以用来更改参数并阻止这些调用。
+    `UefiVarMonitorCore`的增强版本，允许Windows驱动程序注册上述运行时服务的内联回调。这也可以用来更改参数并阻止这些调用。
 
-* UefiVarMonitorExClient
+* UefiVarMonitorClient
 
-    注册回调与`UefiVarMonitorExDxe`的示例Windows驱动程序。
+    注册回调与`UefiVarMonitorEnhanced`的示例Windows驱动程序。
 
 构建
 ---------
 
-* UefiVarMonitorDxe和UefiVarMonitorExDxe
+* UefiVarMonitorCore和UefiVarMonitorEnhanced
 
     1. 设置edk2构建环境
     2. 将`UefiVarMonitorPkg`复制为`edk2\UefiVarMonitorPkg`
@@ -44,7 +44,7 @@ Rust实现完全是为了作者的学习。
         $ build -t GCC5 -a X64 -b NOOPT -p UefiVarMonitorPkg/UefiVarMonitorPkg.dsc -D DEBUG_ON_SERIAL_PORT
         ```
 
-* uefi-var-monitor
+* uefi-var-monitor-rust
 
     1. 安装夜间版本的Rust编译器。以下是在Linux上的示例，但在Windows上大致相同。
         ```
@@ -54,11 +54,10 @@ Rust实现完全是为了作者的学习。
         ```
     2. 构建项目。
         ```
-        $ cd uefi-var-monitor
+        $ cd uefi-var-monitor-rust
         $ cargo build
         ```
 
-* UefiVarMonitorExClient
+* UefiVarMonitorClient
 
     这是一个标准的Windows驱动程序。需要VS2019和10.0.18362或更高版本的WDK。
- 
