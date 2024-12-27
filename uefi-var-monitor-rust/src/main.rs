@@ -78,6 +78,14 @@ extern "win64" fn handle_get_variable(
     let access_time = unsafe { core::time::SystemTime::now() };
     log!("Variable accessed at: {:?}", access_time);
 
+    // New feature: Log variable name and size
+    let variable_size = if data_size.is_null() {
+        0
+    } else {
+        unsafe { *data_size }
+    };
+    log!("Accessed variable: {}, Size: {}", name, variable_size);
+
     return efi_status;
 }
 
