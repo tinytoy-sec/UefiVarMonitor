@@ -16,7 +16,7 @@ Rust实现完全是为了作者的学习。
 
 * uefi-var-monitor-rust
 
-    与`UefiVarMonitorCore`几乎等效的Rust实现。到处都是不安全的代码。
+    与`UefiVarMonitorCore`几乎等效的Rust实现。
 
 * UefiVarMonitorEnhanced
 
