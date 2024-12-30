@@ -90,20 +90,27 @@ AcquireSpinLockForNt (
     OUT UINTN* OldInterruptState
     )
 {
-    static CONST UINTN dispatchLevel = 2;
+    static const UINTN DISPATCH_LEVEL = 2;
 
     *OldInterruptState = __readcr8();
-    ASSERT(*OldInterruptState <= dispatchLevel);
+    ASSERT(*OldInterruptState <= DISPATCH_LEVEL);
 
-    __writecr8(dispatchLevel);
+    if (*OldInterruptState < DISPATCH_LEVEL) {
+        __writecr8(DISPATCH_LEVEL);
+    }
+    
     AcquireSpinLock(SpinLock);
 }
 
-/**
- * @brief Enables low-level interrupts and releases the spin lock.
- */
-static
 VOID
+ReleaseSpinLockForNt (
+    IN OUT SPIN_LOCK* SpinLock,
+    IN UINTN OldInterruptState
+    )
+{
+    ReleaseSpinLock(SpinLock);
+    __writecr8((UINT8)OldInterruptState);
+}
 ReleaseSpinLockForNt (
     IN OUT SPIN_LOCK* SpinLock,
     IN UINTN NewInterruptState
