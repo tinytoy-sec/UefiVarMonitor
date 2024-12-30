@@ -52,22 +52,7 @@ HandleGetOrSetVariable (
         message = Parameters->Parameters.Set.StatusMessage;
     }
 
-    status = RtlStringCchPrintfA(
-        guidStr,
-        RTL_NUMBER_OF(guidStr),
-        "%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX",
-        guid->Data1,
-        guid->Data2,
-        guid->Data3,
-        guid->Data4[0],
-        guid->Data4[1],
-        guid->Data4[2],
-        guid->Data4[3],
-        guid->Data4[4],
-        guid->Data4[5],
-        guid->Data4[6],
-        guid->Data4[7]);
-    NT_VERIFY(NT_SUCCESS(status));
+    FormatGuidString(guid, guidStr, RTL_NUMBER_OF(guidStr));
 
     DbgPrintEx(DPFLTR_IHVDRIVER_ID,
                DPFLTR_ERROR_LEVEL,
@@ -116,22 +101,7 @@ ProcessBuffer (
 
         entry = (CONST VARIABLE_LOG_ENTRY*)&Buffer[offset];
 
-        status = RtlStringCchPrintfA(
-            guidStr,
-            RTL_NUMBER_OF(guidStr),
-            "%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX",
-            entry->VendorGuid.Data1,
-            entry->VendorGuid.Data2,
-            entry->VendorGuid.Data3,
-            entry->VendorGuid.Data4[0],
-            entry->VendorGuid.Data4[1],
-            entry->VendorGuid.Data4[2],
-            entry->VendorGuid.Data4[3],
-            entry->VendorGuid.Data4[4],
-            entry->VendorGuid.Data4[5],
-            entry->VendorGuid.Data4[6],
-            entry->VendorGuid.Data4[7]);
-        NT_VERIFY(NT_SUCCESS(status));
+        FormatGuidString(&entry->VendorGuid, guidStr, RTL_NUMBER_OF(guidStr));
 
         DbgPrintEx(DPFLTR_IHVDRIVER_ID,
                    DPFLTR_ERROR_LEVEL,
@@ -275,4 +245,45 @@ Exit:
         ExFreePoolWithTag(buffer, 'CMVU');
     }
     return status;
+}
+
+/**
+ * @brief Formats a GUID string.
+ */
+static
+VOID
+FormatGuidString(
+    _In_ CONST GUID* guid,
+    _Out_ CHAR* guidStr,
+    _In_ SIZE_T guidStrSize
+) {
+    RtlStringCchPrintfA(
+        guidStr,
+        guidStrSize,
+        "%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX",
+        guid->Data1,
+        guid->Data2,
+        guid->Data3,
+        guid->Data4[0],
+        guid->Data4[1],
+        guid->Data4[2],
+        guid->Data4[3],
+        guid->Data4[4],
+        guid->Data4[5],
+        guid->Data4[6],
+        guid->Data4[7]);
+}
+
+/**
+ * @brief Retrieves a firmware environment variable.
+ */
+static
+NTSTATUS
+GetFirmwareEnvironmentVariable(
+    _In_ CONST UNICODE_STRING* variableName,
+    _In_ GUID* guid,
+    _Out_ VOID* buffer,
+    _Inout_ ULONG* size
+) {
+    return ExGetFirmwareEnvironmentVariable(variableName, guid, buffer, size, NULL);
 }
